@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="ink">#111820</color>
+    <color name="surface">#F7F8FA</color>
+    <color name="surface_dark">#E9EDF1</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="safe">#18A875</color>
+    <color name="warning">#F4A62A</color>
+    <color name="danger">#E84C4F</color>
+    <color name="muted">#65717D</color>
+    <color name="scrim">#990B1015</color>
+</resources>
