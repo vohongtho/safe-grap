@@ -7,6 +7,7 @@ import org.tensorflow.lite.Interpreter
 import java.io.FileInputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import java.nio.channels.FileChannel
 import kotlin.math.abs
 import kotlin.math.min
 
@@ -15,7 +16,7 @@ class VehicleDetector(context: Context) : AutoCloseable {
         context.assets.openFd(MODEL_FILE).use { descriptor ->
             FileInputStream(descriptor.fileDescriptor).channel.use { channel ->
                 channel.map(
-                    FileInputStream.MapMode.READ_ONLY,
+                    FileChannel.MapMode.READ_ONLY,
                     descriptor.startOffset,
                     descriptor.declaredLength
                 )
