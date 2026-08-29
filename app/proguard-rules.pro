@@ -1,2 +1,3 @@
 -keep class org.tensorflow.lite.** { *; }
 -keep class com.google.flatbuffers.** { *; }
+-keep class org.opencv.** { *; }

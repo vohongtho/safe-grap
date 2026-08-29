@@ -19,6 +19,7 @@ import androidx.core.content.ContextCompat
 import com.safegrap.app.alerts.AlertController
 import com.safegrap.app.alerts.AlertState
 import com.safegrap.app.camera.CameraFrameAnalyzer
+import com.safegrap.app.camera.FrameQualityIssue
 import com.safegrap.app.camera.FrameQualityAnalyzer
 import com.safegrap.app.databinding.ActivityMainBinding
 import com.safegrap.app.databinding.DialogCalibrationBinding
@@ -30,6 +31,7 @@ import com.safegrap.app.distance.LeadVehicleMovementDetector
 import com.safegrap.app.settings.AppSettings
 import com.safegrap.app.settings.SettingsActivity
 import com.safegrap.app.speed.SpeedMonitor
+import org.opencv.android.OpenCVLoader
 import java.util.concurrent.Executors
 import kotlin.math.roundToInt
 
@@ -45,6 +47,7 @@ class MainActivity : AppCompatActivity() {
     private var cameraProvider: ProcessCameraProvider? = null
     private var detector: VehicleDetector? = null
     private var lastDetection: VehicleDetection? = null
+    private var cameraQualityIssue = FrameQualityIssue.NONE
     private var currentSpeed: Float? = null
     private var distanceState = AlertState.NO_VEHICLE
     private var paused = false
@@ -73,6 +76,13 @@ class MainActivity : AppCompatActivity() {
         binding.pauseButton.setOnClickListener { togglePause() }
         binding.calibrateButton.setOnClickListener { showCalibration() }
         updateSoundButton()
+        if (!OpenCVLoader.initLocal()) {
+            binding.cameraMessageText.setText(R.string.opencv_init_failed)
+            binding.cameraMessageText.visibility = View.VISIBLE
+            binding.statusTitle.setText(R.string.camera_invalid)
+            binding.statusDetail.setText(R.string.opencv_init_failed)
+            return
+        }
         if (hasCameraPermission()) startCamera() else cameraPermission.launch(Manifest.permission.CAMERA)
         requestLocationIfNeeded()
     }
@@ -115,10 +125,11 @@ class MainActivity : AppCompatActivity() {
                     if (distance == null) { collision.reset(); movement.reset() }
                     runOnUiThread {
                         lastDetection = detection
+                        cameraQualityIssue = result.qualityIssue
                         distanceState = state
                         binding.overlayView.update(detection, distance, state)
                         binding.cameraMessageText.visibility = if (result.invalidCamera) View.VISIBLE else View.GONE
-                        if (result.invalidCamera) binding.cameraMessageText.setText(R.string.camera_invalid_detail)
+                        if (result.invalidCamera) binding.cameraMessageText.setText(cameraQualityMessage(result.qualityIssue))
                         renderState(effectiveState())
                     }
                 })
@@ -157,7 +168,11 @@ class MainActivity : AppCompatActivity() {
             AlertState.SPEEDING -> R.string.speeding to R.string.speeding_detail
         }
         binding.statusTitle.setText(text.first)
-        if (state == AlertState.SPEEDING) binding.statusDetail.text = getString(text.second, settings.speedLimit) else binding.statusDetail.setText(text.second)
+        when (state) {
+            AlertState.SPEEDING -> binding.statusDetail.text = getString(text.second, settings.speedLimit)
+            AlertState.CAMERA_INVALID -> binding.statusDetail.setText(cameraQualityMessage(cameraQualityIssue))
+            else -> binding.statusDetail.setText(text.second)
+        }
         val colour = when (state) {
             AlertState.COLLISION, AlertState.DANGER -> Color.rgb(232, 76, 79)
             AlertState.WARNING, AlertState.SPEEDING -> Color.rgb(217, 137, 22)
@@ -205,6 +220,13 @@ class MainActivity : AppCompatActivity() {
     private fun updateSoundButton() {
         binding.soundButton.contentDescription = getString(if (settings.soundEnabled) R.string.sound_on else R.string.sound_off)
         binding.soundButton.alpha = if (settings.soundEnabled) 1f else 0.45f
+    }
+
+    private fun cameraQualityMessage(issue: FrameQualityIssue): Int = when (issue) {
+        FrameQualityIssue.TOO_DARK -> R.string.camera_too_dark_detail
+        FrameQualityIssue.LOW_DETAIL -> R.string.camera_low_detail_detail
+        FrameQualityIssue.BLURRY -> R.string.camera_blurry_detail
+        FrameQualityIssue.NONE -> R.string.camera_invalid_detail
     }
 
     override fun onDestroy() {

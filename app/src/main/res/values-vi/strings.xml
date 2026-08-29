@@ -21,6 +21,10 @@
     <string name="vehicle_moved_detail">Đường phía trước có thể đã thông</string>
     <string name="camera_invalid">Camera bị che hoặc quá tối</string>
     <string name="camera_invalid_detail">Lau ống kính hoặc chỉnh lại hướng camera</string>
+    <string name="camera_too_dark_detail">Khung cảnh phía trước quá tối</string>
+    <string name="camera_low_detail_detail">Camera có thể bị che hoặc đặt sai hướng</string>
+    <string name="camera_blurry_detail">Hình ảnh bị mờ — hãy lau hoặc cố định camera</string>
+    <string name="opencv_init_failed">Không thể khởi động OpenCV. Hãy mở lại ứng dụng.</string>
     <string name="speeding">Vượt giới hạn tốc độ</string>
     <string name="speeding_detail">Giảm tốc — giới hạn %1$d km/h</string>
     <string name="speed_format">%1$d km/h</string>

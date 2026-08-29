@@ -1,27 +1,55 @@
 package com.safegrap.app.camera
 
 import android.graphics.Bitmap
-import kotlin.math.sqrt
+import org.opencv.android.Utils
+import org.opencv.core.Core
+import org.opencv.core.CvType
+import org.opencv.core.Mat
+import org.opencv.core.MatOfDouble
+import org.opencv.core.Size
+import org.opencv.imgproc.Imgproc
 
-class FrameQualityAnalyzer {
+class FrameQualityAnalyzer(
+    private val policy: FrameQualityPolicy = FrameQualityPolicy()
+) {
     private var poorSince = 0L
 
-    fun isInvalid(bitmap: Bitmap, now: Long = System.currentTimeMillis()): Boolean {
-        var sum = 0.0
-        var squareSum = 0.0
-        var count = 0
-        val stepX = (bitmap.width / 16).coerceAtLeast(1)
-        val stepY = (bitmap.height / 12).coerceAtLeast(1)
-        for (y in stepY / 2 until bitmap.height step stepY) for (x in stepX / 2 until bitmap.width step stepX) {
-            val pixel = bitmap.getPixel(x, y)
-            val lum = (0.2126 * ((pixel shr 16) and 255) + 0.7152 * ((pixel shr 8) and 255) + 0.0722 * (pixel and 255))
-            sum += lum; squareSum += lum * lum; count++
+    fun analyze(bitmap: Bitmap, now: Long = System.currentTimeMillis()): FrameQualityIssue {
+        val rgba = Mat()
+        val scaled = Mat()
+        val gray = Mat()
+        val laplacian = Mat()
+        val mean = MatOfDouble()
+        val deviation = MatOfDouble()
+        val laplacianMean = MatOfDouble()
+        val laplacianDeviation = MatOfDouble()
+
+        return try {
+            Utils.bitmapToMat(bitmap, rgba)
+            val targetWidth = minOf(320.0, rgba.width().toDouble())
+            val targetHeight = rgba.height() * targetWidth / rgba.width().coerceAtLeast(1)
+            Imgproc.resize(rgba, scaled, Size(targetWidth, targetHeight), 0.0, 0.0, Imgproc.INTER_AREA)
+            Imgproc.cvtColor(scaled, gray, Imgproc.COLOR_RGBA2GRAY)
+            Core.meanStdDev(gray, mean, deviation)
+            Imgproc.Laplacian(gray, laplacian, CvType.CV_64F)
+            Core.meanStdDev(laplacian, laplacianMean, laplacianDeviation)
+
+            val metrics = FrameQualityMetrics(
+                brightness = mean.get(0, 0)[0],
+                contrast = deviation.get(0, 0)[0],
+                sharpness = laplacianDeviation.get(0, 0)[0]
+            )
+            val issue = policy.classify(metrics)
+            if (issue == FrameQualityIssue.NONE) {
+                poorSince = 0L
+                FrameQualityIssue.NONE
+            } else {
+                if (poorSince == 0L) poorSince = now
+                if (now - poorSince >= 1_800L) issue else FrameQualityIssue.NONE
+            }
+        } finally {
+            rgba.release(); scaled.release(); gray.release(); laplacian.release()
+            mean.release(); deviation.release(); laplacianMean.release(); laplacianDeviation.release()
         }
-        val mean = sum / count.coerceAtLeast(1)
-        val variance = squareSum / count.coerceAtLeast(1) - mean * mean
-        val poor = mean < 18 || sqrt(variance.coerceAtLeast(0.0)) < 7
-        if (poor && poorSince == 0L) poorSince = now
-        if (!poor) poorSince = 0L
-        return poorSince > 0 && now - poorSince > 1800
     }
 }

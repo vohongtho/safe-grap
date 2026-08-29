@@ -11,8 +11,8 @@ android {
         applicationId = "com.safegrap.app"
         minSdk = 26
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = 2
+        versionName = "1.1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -46,5 +46,6 @@ dependencies {
     implementation("androidx.camera:camera-lifecycle:$cameraXVersion")
     implementation("androidx.camera:camera-view:$cameraXVersion")
     implementation("org.tensorflow:tensorflow-lite-task-vision:0.4.4")
+    implementation("org.opencv:opencv:4.14.0")
     testImplementation("junit:junit:4.13.2")
 }

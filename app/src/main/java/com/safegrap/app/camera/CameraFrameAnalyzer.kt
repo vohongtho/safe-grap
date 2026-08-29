@@ -5,10 +5,13 @@ import android.graphics.Matrix
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
 import com.safegrap.app.detection.VehicleDetection
+import com.safegrap.app.detection.VehicleBoxStabilizer
 import com.safegrap.app.detection.VehicleDetector
 import java.util.concurrent.atomic.AtomicBoolean
 
-data class FrameResult(val detection: VehicleDetection?, val invalidCamera: Boolean)
+data class FrameResult(val detection: VehicleDetection?, val qualityIssue: FrameQualityIssue) {
+    val invalidCamera: Boolean get() = qualityIssue != FrameQualityIssue.NONE
+}
 
 class CameraFrameAnalyzer(
     private val detector: VehicleDetector,
@@ -16,12 +19,14 @@ class CameraFrameAnalyzer(
     private val onResult: (FrameResult) -> Unit
 ) : ImageAnalysis.Analyzer {
     private val busy = AtomicBoolean(false)
+    private val stabilizer = VehicleBoxStabilizer()
 
     override fun analyze(image: ImageProxy) {
         if (!busy.compareAndSet(false, true)) { image.close(); return }
         try {
             val bitmap = image.toRotatedBitmap()
-            onResult(FrameResult(detector.detect(bitmap), qualityAnalyzer.isInvalid(bitmap)))
+            val detection = detector.detect(bitmap)?.let(stabilizer::stabilize)
+            onResult(FrameResult(detection, qualityAnalyzer.analyze(bitmap)))
             bitmap.recycle()
         } finally {
             busy.set(false)

@@ -2,6 +2,8 @@
 
 SafeGap is a focused Android driving assistant that uses the phone's rear camera to estimate the distance to the vehicle ahead. It supports portrait and landscape mounting, overlays the estimated distance on the detected vehicle, and shows GPS speed directly over the camera view.
 
+CameraX supplies frames, TensorFlow Lite detects the lead vehicle, and OpenCV 4.14 stabilizes the detected box and measures brightness, contrast, and sharpness for camera-quality warnings.
+
 ## Alerts
 
 - Following distance warning and danger thresholds

@@ -21,6 +21,10 @@
     <string name="vehicle_moved_detail">The road ahead may be clear</string>
     <string name="camera_invalid">Camera view blocked</string>
     <string name="camera_invalid_detail">Clean the lens or improve the road view</string>
+    <string name="camera_too_dark_detail">The road view is too dark</string>
+    <string name="camera_low_detail_detail">The lens may be covered or out of position</string>
+    <string name="camera_blurry_detail">The image is blurred — clean or secure the camera</string>
+    <string name="opencv_init_failed">OpenCV could not start. Restart the app.</string>
     <string name="speeding">Over speed limit</string>
     <string name="speeding_detail">Slow down — limit %1$d km/h</string>
     <string name="speed_format">%1$d km/h</string>
