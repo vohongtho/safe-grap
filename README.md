@@ -29,7 +29,11 @@ Requirements: Android Studio with JDK 17 and Android SDK 36.
 ./gradlew testDebugUnitTest assembleDebug
 ```
 
-ABI-specific debug APKs are written to `app/build/outputs/apk/debug/`. Use the `arm64-v8a` APK for most current Android phones or `armeabi-v7a` for older 32-bit devices. GitHub Actions also produces a downloadable `SafeGap-debug` artifact after each push.
+ABI-specific debug APKs are written to `app/build/outputs/apk/<abi>/debug/`. Use the `arm64-v8a` APK for most current Android phones or `armeabi-v7a` for older 32-bit devices. GitHub Actions also produces a downloadable `SafeGap-debug` artifact after each push.
+
+### Automatic Loadly upload
+
+Pushes to `main` automatically upload the `arm64-v8a` APK to Loadly when the repository Actions secret `LOADLY_API_KEY` is configured. Pull requests build and test the app but never publish it. The resulting public install URL is written to the workflow run summary.
 
 ## Important safety limitation
 
