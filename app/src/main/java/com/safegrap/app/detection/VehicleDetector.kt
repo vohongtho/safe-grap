@@ -4,24 +4,15 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.RectF
 import org.tensorflow.lite.Interpreter
-import java.io.FileInputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
-import java.nio.channels.FileChannel
 import kotlin.math.abs
 import kotlin.math.min
 
 class VehicleDetector(context: Context) : AutoCloseable {
+    private val modelBuffer = loadModel(context)
     private val interpreter = Interpreter(
-        context.assets.openFd(MODEL_FILE).use { descriptor ->
-            FileInputStream(descriptor.fileDescriptor).channel.use { channel ->
-                channel.map(
-                    FileChannel.MapMode.READ_ONLY,
-                    descriptor.startOffset,
-                    descriptor.declaredLength
-                )
-            }
-        },
+        modelBuffer,
         Interpreter.Options().apply { setNumThreads(2) }
     )
     private val input = ByteBuffer.allocateDirect(INPUT_SIZE * INPUT_SIZE * 3)
@@ -93,5 +84,21 @@ class VehicleDetector(context: Context) : AutoCloseable {
             5 to "bus",
             7 to "truck"
         )
+
+        fun loadModel(context: Context): ByteBuffer {
+            val bytes = context.assets.open(MODEL_FILE).use { it.readBytes() }
+            require(
+                bytes.size >= 8 &&
+                    bytes[4] == 'T'.code.toByte() &&
+                    bytes[5] == 'F'.code.toByte() &&
+                    bytes[6] == 'L'.code.toByte() &&
+                    bytes[7] == '3'.code.toByte()
+            ) { "SafeGap AI model is damaged (missing TFL3 signature)" }
+
+            return ByteBuffer.allocateDirect(bytes.size)
+                .order(ByteOrder.nativeOrder())
+                .put(bytes)
+                .apply { rewind() }
+        }
     }
 }
